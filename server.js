@@ -26,17 +26,10 @@ app.use("/api/students", studentRoutes);
 // add other API routes here, e.g. authRoutes
 
 // --- Serve frontend build (static files) ---
-const clientBuildPath = path.join(__dirname, "..", "frontend", "build");
-app.use(express.static(clientBuildPath));
 
 // For any route not handled by the server (and not starting with /api),
 // send index.html so React Router can handle the route on client.
-app.use((req, res, next) => {
-  if (req.path.startsWith("/api")) {
-    return res.status(404).json({ message: "API route not found" });
-  }
-  res.sendFile(path.join(clientBuildPath, "index.html"));
-});
+
 
 // Connect to DB and start server
 const PORT = process.env.PORT || 5000;
