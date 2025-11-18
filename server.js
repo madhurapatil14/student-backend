@@ -1,35 +1,56 @@
-// server.js
+// backend/server.js
+
 
 import express from "express";
-import mongoose from "mongoose";
-import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 import cors from "cors";
-import connectDB from "./config/db.js";
-import studentRoutes from "./routes/studentRoutes.js";
+import dotenv from "dotenv";
+import connectDB from "./config/db.js";     // keep your existing DB helper
+import studentRoutes from "./routes/studentRoutes.js"; // your API routes
 
-// Load environment variables
 dotenv.config();
 
-// Connect to MongoDB
-connectDB();
+// __dirname replacement for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// Initialize express app
 const app = express();
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// Routes
+// --- API routes (define API routes BEFORE static serving) ---
 app.use("/api/students", studentRoutes);
+// add other API routes here, e.g. authRoutes
 
-// Test route
-app.get("/", (req, res) => {
-  res.send("🎯 Student Registration Backend Running Successfully!");
+// --- Serve frontend build (static files) ---
+const clientBuildPath = path.join(__dirname, "..", "frontend", "build");
+app.use(express.static(clientBuildPath));
+
+// For any route not handled by the server (and not starting with /api),
+// send index.html so React Router can handle the route on client.
+app.use((req, res, next) => {
+  if (req.path.startsWith("/api")) {
+    return res.status(404).json({ message: "API route not found" });
+  }
+  res.sendFile(path.join(clientBuildPath, "index.html"));
 });
 
-// Start server
+// Connect to DB and start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
-});
+
+const start = async () => {
+  try {
+    await connectDB(); // your existing function connects using process.env.MONGO_URI
+    app.listen(PORT, () => {
+      console.log(`✅ Server running on port ${PORT}`);
+    });
+  } catch (err) {
+    console.error("❌ Failed to start server:", err);
+    process.exit(1);
+  }
+};
+
+start();
